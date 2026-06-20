@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- SVM Parameters Form -->
+    <div class="card">
+        <h3 class="card-title">🤖 Parameter Model SVM</h3>
+        <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 16px;">
+            Konfigurasi hyperparameter algoritma Support Vector Machine (SVM) untuk klasifikasi kelayakan bantuan sosial.
+        </p>
+        
+        <form id="svm-form" onsubmit="return false;">
+            <div class="form-group">
+                <label for="svm-kernel">Kernel</label>
+                <select id="svm-kernel" class="form-control">
+                    <option value="rbf" selected>RBF (Radial Basis Function)</option>
+                    <option value="linear">Linear</option>
+                    <option value="poly">Polinomial</option>
+                    <option value="sigmoid">Sigmoid</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="svm-c">C (Regularisasi / Penalty)</label>
+                <input type="number" id="svm-c" class="form-control" value="1.0" step="0.1" min="0.01" max="100.0">
+            </div>
+            
+            <div class="form-group">
+                <label for="svm-gamma">Gamma</label>
+                <select id="svm-gamma" class="form-control">
+                    <option value="scale" selected>Scale (Default)</option>
+                    <option value="auto">Auto</option>
+                </select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">GA Fallback (Dipakai saat pencarian fitur)</h4>
+            <p style="font-size: 0.75rem; color: var(--text-light); margin-bottom: 12px;">Untuk efisiensi, parameter GA default akan digunakan secara otomatis jika Anda belum melakukan pencarian fitur di menu sebelumnya.</p>
+            
+            <button class="btn btn-success" id="btn-run-svm" style="width: 100%;" {% if not state.preprocessed %}disabled{% endif %}>
+                🚀 Mulai Pelatihan Model (Baseline vs GA+SVM)
+            </button>
+            {% if not state.preprocessed %}
+                <p style="font-size: 0.8rem; color: var(--danger-color); font-weight: 500; text-align: center; margin-top: 8px;">
+                    ⚠️ Lakukan Preprocessing terlebih dahulu di menu Preprocessing Data!
+                </p>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Live Training Logs Console -->
+    <div class="card">
+        <h3 class="card-title">🖥️ Log Pelatihan Model (Console)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 16px;">
+            Aliran log streaming SSE untuk memantau pembersihan, inisialisasi GA, cross-validation, dan penaksiran akurasi model secara dinamis.
+        </p>
+
+        <!-- Log Console Box -->
+        <div class="console-box" id="train-console">
+            <div class="console-line text-light">&gt; Console siap. Klik tombol "Mulai Pelatihan Model" untuk melatih...</div>
+        </div>
+
+        <div id="svm-training-status" style="display: none; align-items: center; gap: 10px;">
+            <div style="width: 16px; height: 16px; border: 2.5px solid var(--border-color); border-top-color: var(--secondary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span style="font-size: 0.85rem; font-weight: 500; color: var(--secondary-color);">Sedang melatih model... Mohon tunggu.</span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}

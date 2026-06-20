@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not state.svm_trained %}
+<div class="card" style="text-align: center; padding: 60px 40px;">
+    <p style="font-size: 3.5rem; margin-bottom: 16px;">📊</p>
+    <h3 style="font-weight: 600; color: var(--primary-color);">Hasil Evaluasi Belum Tersedia</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 6px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Silakan lakukan pelatihan model di menu Klasifikasi SVM terlebih dahulu untuk membandingkan metrik performa sebelum dan sesudah optimasi.
+    </p>
+    <a href="{{ url_for('page_svm_training') }}" class="btn btn-primary" style="margin-top: 20px;">Latih Model Sekarang</a>
+</div>
+{% else %}
+<!-- ── Performance Comparison Cards ── -->
+<div class="card">
+    <h3 class="card-title">📋 Tabel Perbandingan Metrik Performa</h3>
+    <div class="table-container">
+        <table class="bps-table" style="text-align: center;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Metrik Evaluasi</th>
+                    <th>SVM Baseline (Semua Fitur)</th>
+                    <th>SVM + GA (Fitur Terpilih)</th>
+                    <th>Selisih (Peningkatan)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set metrics = [
+                    ('Akurasi (Accuracy)', state.accuracy_baseline, state.accuracy_opt),
+                    ('Presisi (Precision)', state.precision_baseline, state.precision_opt),
+                    ('Sensitivitas (Recall)', state.recall_baseline, state.recall_opt),
+                    ('F1-Score', state.f1_baseline, state.f1_opt)
+                ] %}
+                {% for label, base, opt in metrics %}
+                    {% set diff = opt - base %}
+                    <tr>
+                        <td style="text-align: left; font-weight: 500;">{{ label }}</td>
+                        <td>{{ "%.4f"|format(base) }}</td>
+                        <td style="font-weight: 700;">{{ "%.4f"|format(opt) }}</td>
+                        <td style="font-weight: 700;">
+                            {% if diff > 0 %}
+                                <span style="color: var(--accent-color);">🟢 +{{ "%.4f"|format(diff) }}</span>
+                            {% elif diff < 0 %}
+                                <span style="color: var(--danger-color);">🔴 {{ "%.4f"|format(diff) }}</span>
+                            {% else %}
+                                <span style="color: var(--text-light);">⚪ 0.0000</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Feature Selection Summary ── -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">🧬</div>
+        <div class="stat-info">
+            <span class="stat-label">Fitur Awal</span>
+            <span class="stat-value">{{ state.n_features_all }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">✓</div>
+        <div class="stat-info">
+            <span class="stat-label">Fitur Terpilih GA</span>
+            <span class="stat-value">{{ state.n_features_ga }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon danger">✗</div>
+        <div class="stat-info">
+            <span class="stat-label">Fitur Dieliminasi</span>
+            <span class="stat-value">{{ state.n_features_all - state.n_features_ga }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">📉</div>
+        <div class="stat-info">
+            <span class="stat-label">Rasio Reduksi</span>
+            <span class="stat-value">
+                {% if state.n_features_all > 0 %}
+                    {{ "%.1f"|format(((state.n_features_all - state.n_features_ga) / state.n_features_all) * 100) }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Side-by-Side Confusion Matrices ── -->
+<div class="grid-2">
+    <!-- Baseline Confusion Matrix -->
+    <div class="card">
+        <h3 class="card-title">🔢 Confusion Matrix (SVM Baseline)</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Sebaran hasil prediksi SVM sebelum seleksi fitur dilakukan.</p>
+        
+        <div class="cm-grid">
+            <div class="cm-cell header">Aktual \ Prediksi</div>
+            <div class="cm-cell header">Tidak Layak (0)</div>
+            <div class="cm-cell header">Layak (1)</div>
+            
+            <div class="cm-cell header">Tidak Layak (0)</div>
+            <div class="cm-cell value tn">TN: <b>{{ state.cm_baseline[0][0] }}</b></div>
+            <div class="cm-cell value fp">FP: <b>{{ state.cm_baseline[0][1] }}</b></div>
+            
+            <div class="cm-cell header">Layak (1)</div>
+            <div class="cm-cell value fn">FN: <b>{{ state.cm_baseline[1][0] }}</b></div>
+            <div class="cm-cell value tp">TP: <b>{{ state.cm_baseline[1][1] }}</b></div>
+        </div>
+    </div>
+
+    <!-- GA + SVM Confusion Matrix -->
+    <div class="card">
+        <h3 class="card-title">🔢 Confusion Matrix (SVM + GA)</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Sebaran hasil prediksi SVM sesudah eliminasi noise oleh GA.</p>
+        
+        <div class="cm-grid">
+            <div class="cm-cell header">Aktual \ Prediksi</div>
+            <div class="cm-cell header">Tidak Layak (0)</div>
+            <div class="cm-cell header">Layak (1)</div>
+            
+            <div class="cm-cell header">Tidak Layak (0)</div>
+            <div class="cm-cell value tn">TN: <b>{{ state.cm_opt[0][0] }}</b></div>
+            <div class="cm-cell value fp">FP: <b>{{ state.cm_opt[0][1] }}</b></div>
+            
+            <div class="cm-cell header">Layak (1)</div>
+            <div class="cm-cell value fn">FN: <b>{{ state.cm_opt[1][0] }}</b></div>
+            <div class="cm-cell value tp">TP: <b>{{ state.cm_opt[1][1] }}</b></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── GA Convergence Charts ── -->
+<div class="card">
+    <h3 class="card-title">📈 Kurva Konvergensi GA</h3>
+    <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 16px;">
+        Grafik konvergensi nilai Fitness (Akurasi Stratified Cross-Validation) dan dinamika jumlah fitur terpilih dari generasi ke generasi.
+    </p>
+    <div style="width: 100%; height: 320px; position: relative;">
+        <canvas id="convergenceChart"></canvas>
+    </div>
+</div>
+
+<!-- ── Classification Reports detail ── -->
+<div class="card">
+    <h3 class="card-title">📋 Laporan Klasifikasi Detil (Classification Report)</h3>
+    <div class="grid-2">
+        <div>
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">SVM Baseline</h4>
+            <pre style="background-color: var(--bg-color); padding: 12px; border-radius: var(--border-radius-md); font-family: monospace; font-size: 0.8rem; overflow-x: auto;">{{ state.report_baseline }}</pre>
+        </div>
+        <div>
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">SVM + GA</h4>
+            <pre style="background-color: var(--bg-color); padding: 12px; border-radius: var(--border-radius-md); font-family: monospace; font-size: 0.8rem; overflow-x: auto;">{{ state.report_opt }}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Confusion Matrix Styling -->
+<style>
+.cm-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr;
+    grid-template-rows: 40px 60px 60px;
+    gap: 6px;
+    max-width: 440px;
+    margin: 10px auto;
+    text-align: center;
+}
+.cm-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.85rem;
+}
+.cm-cell.header {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+.cm-cell.value {
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+}
+.cm-cell.value.tn {
+    background-color: #e6f4ea; /* Light Green */
+    color: #137333;
+}
+.cm-cell.value.tp {
+    background-color: #e8f0fe; /* Light Blue */
+    color: #1a73e8;
+}
+.cm-cell.value.fp, .cm-cell.value.fn {
+    background-color: #fce8e6; /* Light Red */
+    color: #c5221f;
+}
+</style>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Read history from backend state
+    const history = {{ state.ga_history|tojson }};
+    if (history && history.generation && history.generation.length > 0) {
+        const ctx = document.getElementById('convergenceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: history.generation,
+                datasets: [
+                    {
+                        label: 'Best Fitness (Acc)',
+                        data: history.best_fitness,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Average Fitness',
+                        data: history.avg_fitness,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        tension: 0.2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Fitur Terpilih',
+                        data: history.n_features,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        tension: 0,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Generasi'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Fitness (Akurasi)'
+                        },
+                        min: 0.5,
+                        max: 1.0
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Jumlah Fitur'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

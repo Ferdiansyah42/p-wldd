@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">🔧 Preprocessing & Pengondisian Data</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px;">
+        Sebelum melatih model SVM dan melakukan seleksi fitur dengan GA, dataset perlu dibersihkan, dinormalisasi (scaling), 
+        dan dibagi menjadi subset latih & uji untuk pengujian akademis yang valid.
+    </p>
+
+    <!-- Checklist Box -->
+    <div style="border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); background-color: #fafbfc; overflow: hidden; margin-bottom: 24px;">
+        <!-- Step 1 -->
+        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-clean">
+            <div class="checklist-left">
+                <div class="checklist-icon">✓</div>
+                <div class="checklist-text">
+                    <h4>Pembersihan Data (Data Cleaning)</h4>
+                    <p>Menghapus baris duplikat, mendeteksi nilai kosong (missing values), dan mengisinya dengan median/modus.</p>
+                </div>
+            </div>
+            <span class="badge" id="badge-clean">{% if state.preprocessed %}Dibersihkan{% else %}Menunggu{% endif %}</span>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-norm">
+            <div class="checklist-left">
+                <div class="checklist-icon">✓</div>
+                <div class="checklist-text">
+                    <h4>Normalisasi Fitur (StandardScaler)</h4>
+                    <p>Melakukan standardisasi fitur-fitur numerik agar berdistribusi normal (mean=0, std=1) guna menunjang algoritma SVM.</p>
+                </div>
+            </div>
+            <span class="badge" id="badge-norm">{% if state.preprocessed %}Normal{% else %}Menunggu{% endif %}</span>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-split">
+            <div class="checklist-left">
+                <div class="checklist-icon">✓</div>
+                <div class="checklist-text">
+                    <h4>Stratified Train-Test Split (80:20)</h4>
+                    <p>Membagi dataset menjadi 80% data latih dan 20% data uji dengan stratifikasi target kelas agar sebaran tetap merata.</p>
+                </div>
+            </div>
+            <span class="badge" id="badge-split">{% if state.preprocessed %}Terbagi (80:20){% else %}Menunggu{% endif %}</span>
+        </div>
+    </div>
+
+    <!-- Trigger Button -->
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button class="btn btn-primary" id="btn-run-preprocess" {% if not state.dataset_loaded %}disabled{% endif %}>
+            ⚡ Jalankan Preprocessing Data
+        </button>
+        {% if not state.dataset_loaded %}
+            <span style="font-size: 0.825rem; color: var(--danger-color); font-weight: 500;">⚠️ Unggah dataset terlebih dahulu di menu Kelola Dataset!</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── PREPROCESSING DETAILS CARD ── -->
+<div class="card" id="preprocess-summary-card" {% if not state.preprocessed %}style="display: none;"{% endif %}>
+    <h3 class="card-title">📝 Ringkasan Pengondisian</h3>
+    <div class="grid-3" style="margin-top: 10px;">
+        <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); background-color: #f8fafc;">
+            <span style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 600;">Duplikat Dihapus</span>
+            <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 4px;" id="val-dup">{{ state.n_dup }}</h2>
+        </div>
+        <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); background-color: #f8fafc;">
+            <span style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 600;">Jumlah Fitur Aktif</span>
+            <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 4px;" id="val-features">{{ state.n_features_all }}</h2>
+        </div>
+        <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); background-color: #f8fafc;">
+            <span style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 600;">Penyisihan Kolom Identitas</span>
+            <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 6px;">
+                Kolom <b>NIK</b> & <b>Nama</b> telah diisolasi dari matriks latih model dan disimpan terpisah.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

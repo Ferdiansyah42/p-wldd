@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not state.ga_trained %}
+<div class="card" style="text-align: center; padding: 60px 40px;">
+    <p style="font-size: 3.5rem; margin-bottom: 16px;">📄</p>
+    <h3 style="font-weight: 600; color: var(--primary-color);">Laporan Belum Tersedia</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 6px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Unduhan laporan akademis (PDF & Excel) hanya dapat di-generate setelah model SVM selesai dilatih menggunakan seleksi fitur GA.
+    </p>
+    <a href="{{ url_for('page_svm_training') }}" class="btn btn-primary" style="margin-top: 20px;">Latih Model Sekarang</a>
+</div>
+{% else %}
+<div class="grid-2" style="margin-bottom: 24px;">
+    <!-- Export PDF Card -->
+    <div class="card" style="display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-direction: column;">
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--primary-color); margin-bottom: 8px;">📄 Ekspor Laporan Ringkas Akademis (PDF)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-light); leading: 1.5;">
+                Mengunduh dokumen PDF formal bergaya Badan Pusat Statistik (BPS) yang berisi rangkuman data penelitian, 
+                parameter GA, seleksi fitur, kurva performa, dan bab kesimpulan model secara lengkap.
+            </p>
+        </div>
+        <a href="{{ url_for('api_export_pdf') }}" class="btn btn-danger" style="width: 100%;">
+            📥 Unduh Laporan PDF
+        </a>
+    </div>
+
+    <!-- Export Excel Card -->
+    <div class="card" style="display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-direction: column;">
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--primary-color); margin-bottom: 8px;">📊 Ekspor Data & Hasil Seleksi (Excel)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-light); leading: 1.5;">
+                Mengunduh berkas spreadsheet XLSX multi-sheet berisi data tabular performa komparatif, daftar lengkap status seleksi biner fitur, 
+                serta 200 baris cuplikan dataset utama untuk peninjauan spreadsheet mandiri.
+            </p>
+        </div>
+        <a href="{{ url_for('api_export_excel') }}" class="btn btn-success" style="width: 100%;">
+            📥 Unduh Laporan Excel
+        </a>
+    </div>
+</div>
+
+<!-- ── PRINTABLE SUMMARY SECTION ── -->
+<div class="card printable-area" id="printable-summary-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--primary-color); padding-bottom: 12px;" class="no-print-wrapper">
+        <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--primary-color); margin: 0;">📋 Ringkasan Hasil Penelitian Akademis (Cetak Layar)</h3>
+        <button class="btn btn-outline" onclick="window.print()">🖨️ Cetak Ringkasan Layar</button>
+    </div>
+
+    <div class="print-header" style="display: none; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+        <h2 style="font-size: 1.6rem; font-weight: bold; color: #000; margin: 0;">LAPORAN RINGKAS PENELITIAN</h2>
+        <p style="font-size: 0.9rem; margin-top: 4px; font-style: italic;">Klasifikasi Penerima Bantuan Sosial Menggunakan SVM + Genetic Algorithm</p>
+    </div>
+
+    <div style="font-size: 0.95rem; line-height: 1.6;">
+        <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px;">1. Parameter Dataset & Preprocessing</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+                <tr>
+                    <td style="width: 200px; padding: 4px 0; color: var(--text-light);">Nama File Dataset:</td>
+                    <td style="font-weight: 600;">{{ state.dataset_filename }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--text-light);">Jumlah Baris Duplikat:</td>
+                    <td style="font-weight: 600;">{{ state.n_dup }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--text-light);">Jumlah Fitur Awal:</td>
+                    <td style="font-weight: 600;">{{ state.n_features_all }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px;">2. Status Seleksi Fitur (GA)</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+                <tr>
+                    <td style="width: 200px; padding: 4px 0; color: var(--text-light);">Jumlah Fitur Terpilih:</td>
+                    <td style="font-weight: 600;">{{ state.n_features_ga }} / {{ state.n_features_all }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--text-light);">Tingkat Reduksi Noise:</td>
+                    <td style="font-weight: 600; color: var(--accent-color);">
+                        {% if state.n_features_all > 0 %}
+                            {{ "%.1f"|format(((state.n_features_all - state.n_features_ga) / state.n_features_all) * 100) }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; vertical-align: top; color: var(--text-light);">Daftar Fitur Terpilih:</td>
+                    <td style="font-weight: 500; font-family: monospace; font-size: 0.85rem;">
+                        {{ state.selected_features|join(', ') }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px;">3. Metrik Evaluasi Performa</h4>
+            <table class="bps-table" style="margin-top: 8px; font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Metrik</th>
+                        <th style="text-align: center;">Sebelum GA (Baseline)</th>
+                        <th style="text-align: center;">Sesudah GA (Optimasi)</th>
+                        <th style="text-align: center;">Peningkatan (Delta)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set metrics = [
+                        ('Accuracy', state.accuracy_baseline, state.accuracy_opt),
+                        ('Precision', state.precision_baseline, state.precision_opt),
+                        ('Recall', state.recall_baseline, state.recall_opt),
+                        ('F1-Score', state.f1_baseline, state.f1_opt)
+                    ] %}
+                    {% for m_label, base, opt in metrics %}
+                        {% set diff = opt - base %}
+                        <tr>
+                            <td style="text-align: left; font-weight: 500;">{{ m_label }}</td>
+                            <td style="text-align: center;">{{ "%.4f"|format(base) }}</td>
+                            <td style="text-align: center; font-weight: 700;">{{ "%.4f"|format(opt) }}</td>
+                            <td style="text-align: center; font-weight: 700;">
+                                {% if diff > 0 %}
+                                    +{{ "%.4f"|format(diff) }}
+                                {% elif diff < 0 %}
+                                    {{ "%.4f"|format(diff) }}
+                                {% else %}
+                                    0.0000
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Print-specific styles -->
+<style>
+@media print {
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .sidebar, .header, .no-print-wrapper, .card:not(.printable-area), .btn {
+        display: none !important;
+    }
+    .main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    .content-area {
+        padding: 0 !important;
+    }
+    .printable-area {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .print-header {
+        display: block !important;
+    }
+    table th {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+        border-bottom: 2px solid #000000 !important;
+    }
+}
+</style>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">📂 Unggah atau Muat Dataset</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px;">
+        Unggah berkas CSV Anda sendiri atau muat data simulasi bawaan kami yang dilengkapi kolom identitas (NIK dan Nama) secara realistis.
+    </p>
+
+    <div class="grid-2" style="align-items: stretch;">
+        <!-- Drag & Drop Upload Zone -->
+        <div class="upload-zone" id="upload-zone">
+            <div class="upload-zone-icon">📁</div>
+            <h4>Tarik dan Lepas file CSV di sini</h4>
+            <p style="font-size: 0.8rem; color: var(--text-light); margin: 6px 0 16px 0;">atau klik untuk menelusuri berkas komputer</p>
+            <input type="file" id="file-input" accept=".csv" style="display: none;">
+            <button class="btn btn-outline" id="btn-browse-file">Pilih Berkas CSV</button>
+        </div>
+
+        <!-- Sample Loader Card -->
+        <div style="border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 24px; display: flex; flex-direction: column; justify-content: space-between; background-color: #fafbfc;">
+            <div>
+                <h4 style="font-size: 1rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">Simulasi Data Penduduk (Bansos)</h4>
+                <p style="font-size: 0.825rem; color: var(--text-light); leading: 1.5; margin-bottom: 12px;">
+                    Memuat dataset kependudukan buatan berisi 1.000 penduduk Indonesia dengan sebaran fitur realistis seperti pendapatan, luas rumah, sanitasi, dan umur.
+                </p>
+                <ul style="font-size: 0.8rem; color: var(--text-light); padding-left: 16px; margin-bottom: 16px;">
+                    <li>NIK acak 16-digit</li>
+                    <li>Nama populer Indonesia (Budi, Siti, Joko, dll.)</li>
+                    <li>Status target: Layak & Tidak Layak</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" id="btn-load-sample" style="width: 100%;">🚀 Gunakan Data Sampel Bawaan</button>
+        </div>
+    </div>
+    
+    <!-- Status Toast / Alert -->
+    <div id="upload-status" style="margin-top: 16px; padding: 12px 16px; border-radius: var(--border-radius-md); display: none;"></div>
+</div>
+
+<!-- ── DATA PREVIEW SECTION ── -->
+<div class="card" id="preview-card" {% if not state.dataset_loaded %}style="display: none;"{% endif %}>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--primary-color); margin: 0;">👁️ Pratinjau Dataset (50 Baris Pertama)</h3>
+        <span class="badge badge-success" style="font-size: 0.8rem;" id="dataset-badge">Aktif: {{ state.dataset_filename }}</span>
+    </div>
+
+    <div class="table-container">
+        <table class="bps-table" id="preview-table">
+            <thead>
+                <tr>
+                    {% for h in headers %}
+                        <th>{{ h }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data_preview %}
+                    <tr>
+                        {% for val in row %}
+                            <td>{{ val }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" id="no-data-card" {% if state.dataset_loaded %}style="display: none;"{% endif %}>
+    <div style="text-align: center; padding: 40px;">
+        <p style="font-size: 3rem; margin-bottom: 12px;">📂</p>
+        <h4 style="font-weight: 600; color: var(--text-light);">Belum ada dataset yang aktif</h4>
+        <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;">Unggah file CSV atau klik tombol di atas untuk memuat data sampel.</p>
+    </div>
+</div>
+{% endblock %}

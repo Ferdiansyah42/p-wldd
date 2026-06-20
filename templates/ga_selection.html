@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- GA Parameters Form -->
+    <div class="card">
+        <h3 class="card-title">🧬 Parameter Genetic Algorithm</h3>
+        <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 16px;">
+            Atur parameter pencarian heuristik GA untuk menyeleksi fitur-fitur kualitatif terbaik dari dataset.
+        </p>
+        
+        <form id="ga-form" onsubmit="return false;">
+            <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="ga-pop-size">Ukuran Populasi</label>
+                    <input type="number" id="ga-pop-size" class="form-control" value="30" min="10" max="200">
+                </div>
+                <div class="form-group">
+                    <label for="ga-generations">Jumlah Generasi</label>
+                    <input type="number" id="ga-generations" class="form-control" value="50" min="5" max="200">
+                </div>
+            </div>
+            
+            <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="ga-crossover">Crossover Rate</label>
+                    <input type="number" id="ga-crossover" class="form-control" value="0.8" step="0.05" min="0.5" max="1.0">
+                </div>
+                <div class="form-group">
+                    <label for="ga-mutation">Mutation Rate</label>
+                    <input type="number" id="ga-mutation" class="form-control" value="0.1" step="0.01" min="0.01" max="0.5">
+                </div>
+            </div>
+            
+            <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="ga-tournament">Tournament Size (k)</label>
+                    <input type="number" id="ga-tournament" class="form-control" value="3" min="2" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="ga-cv-folds">CV Folds (Fitness)</label>
+                    <input type="number" id="ga-cv-folds" class="form-control" value="3" min="2" max="10">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ga-early-stop">Early Stop Patience</label>
+                <input type="number" id="ga-early-stop" class="form-control" value="10" min="3" max="50">
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 20px;">
+                <input type="checkbox" id="ga-elitism" checked style="width: 16px; height: 16px;">
+                <label for="ga-elitism" style="margin: 0; cursor: pointer;">Gunakan Elitism (Pertahankan kromosom terbaik)</label>
+            </div>
+            
+            <button class="btn btn-primary" id="btn-run-ga" style="width: 100%;" {% if not state.preprocessed %}disabled{% endif %}>
+                🧬 Jalankan Seleksi Fitur
+            </button>
+            {% if not state.preprocessed %}
+                <p style="font-size: 0.8rem; color: var(--danger-color); font-weight: 500; text-align: center; margin-top: 8px;">
+                    ⚠️ Lakukan Preprocessing terlebih dahulu di menu Preprocessing Data!
+                </p>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Features Status Table -->
+    <div class="card">
+        <h3 class="card-title">📋 Status Seleksi Biner Fitur</h3>
+        
+        <!-- Live GA Training Status Panel -->
+        <div id="ga-live-status" style="display: none; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 14px; margin-bottom: 16px;">
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--primary-color); margin-bottom: 6px;">Progress GA: Generasi <span id="live-gen">0</span>/<span id="live-max-gen">0</span></h4>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="live-progress-fill" style="width: 0%;"></div>
+            </div>
+            <p style="font-size: 0.775rem; color: var(--text-light); line-height: 1.4;">
+                Best Fitness (Acc): <b id="live-best-fit">0.0000</b> | Avg: <span id="live-avg-fit">0.0000</span><br>
+                Fitur terpilih: <span id="live-n-feat">0</span> | Cache Hit: <span id="live-cache">0</span> | ETA: <span id="live-eta">0</span>s
+            </p>
+        </div>
+
+        <div class="table-container" style="max-height: 480px; overflow-y: auto;">
+            <table class="bps-table" id="features-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px; text-align: center;">No</th>
+                        <th>Nama Fitur</th>
+                        <th style="text-align: center;">Dipilih GA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feat in features_status %}
+                        <tr class="feature-row" data-name="{{ feat.name }}">
+                            <td style="text-align: center;">{{ feat.no }}</td>
+                            <td>{{ feat.name }}</td>
+                            <td style="text-align: center;" class="feature-status-cell">
+                                {% if state.ga_trained %}
+                                    {% if feat.selected %}
+                                        <span class="badge badge-success">✓ DIPILIH</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">✗ DIELIMINASI</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: var(--text-light); font-size: 0.8rem; font-style: italic;">Belum dilatih</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-light); font-style: italic; padding: 24px;">
+                                Dataset belum dimuat.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

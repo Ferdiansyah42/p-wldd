@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">🔍 Pencarian Status Penerima Bansos</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px;">
+        Masukkan Nomor Induk Kependudukan (NIK) 16-digit atau Nama Lengkap penduduk untuk mencari status kelayakan bantuan sosial secara real-time.
+    </p>
+
+    <!-- Search Box Form -->
+    <form id="search-form" onsubmit="return false;" style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <input type="text" id="search-query" class="form-control" placeholder="Ketik NIK (contoh: 3173...) atau Nama Penduduk (contoh: Budi)..." style="flex-grow: 1;">
+        <button class="btn btn-primary" id="btn-search-recipient">🔍 Cari Penduduk</button>
+    </form>
+
+    <!-- Warning model not active -->
+    <div id="search-model-status" style="display: none; padding: 10px 14px; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: var(--border-radius-md); font-size: 0.8rem; color: #78350f; margin-bottom: 15px;">
+        ⚠️ <b>Perhatian:</b> Model prediksi ML (GA+SVM) belum dilatih. Status kelayakan yang ditampilkan merupakan data mentah bawaan dari dataset.
+    </div>
+</div>
+
+<!-- ── SEARCH RESULTS AREA ── -->
+<div id="search-results-container" style="display: none;">
+    <!-- Results list will be dynamically rendered here by main.js -->
+</div>
+
+<div class="card" id="search-empty-state" style="text-align: center; padding: 60px 40px; border-style: dashed;">
+    <p style="font-size: 2.5rem; margin-bottom: 8px; opacity: 0.6;">🔍</p>
+    <h4 style="font-weight: 600; color: var(--text-light);">Belum ada pencarian dilakukan</h4>
+    <p style="font-size: 0.825rem; color: var(--text-light); margin-top: 4px;">Ketikkan identitas penduduk di atas dan tekan tombol Cari.</p>
+</div>
+
+<div class="card" id="search-error-state" style="display: none; text-align: center; padding: 40px; border-color: var(--danger-color); background-color: #fdf2f2;">
+    <p style="font-size: 2rem; margin-bottom: 8px;">⚠️</p>
+    <h4 style="font-weight: 600; color: var(--danger-color);" id="search-error-title">Data tidak ditemukan</h4>
+    <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;" id="search-error-desc">Silakan periksa kembali NIK atau ejaan nama yang dimasukkan.</p>
+</div>
+
+<!-- Template Card for Search Result (will be clone-injected in JS) -->
+<template id="result-card-template">
+    <div class="card result-card" style="border-left: 6px solid var(--primary-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0;" class="res-nama">Nama Penduduk</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 2px;">NIK: <span class="res-nik">0000000000000000</span></p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="text-align: right;">
+                    <span class="badge res-status-badge">Layak</span>
+                </div>
+                <div style="padding: 6px 12px; background-color: var(--bg-color); border-radius: var(--border-radius-md); text-align: center;">
+                    <span style="font-size: 0.7rem; display: block; color: var(--text-light); text-transform: uppercase; font-weight: 600;">Confidence</span>
+                    <b style="font-size: 1.1rem; color: var(--primary-color);" class="res-confidence">95%</b>
+                </div>
+            </div>
+        </div>
+
+        <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--primary-color); margin-bottom: 10px; border-top: 1px solid var(--border-color); padding-top: 12px;">📈 Indikator Sosial Ekonomi Penduduk</h4>
+        
+        <div class="grid-3" style="gap: 12px;" class="res-details-grid">
+            <!-- Details will be injected here: e.g. Pendapatan, Tanggungan, Pekerjaan, dll -->
+        </div>
+    </div>
+</template>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ── Welcome Card ── -->
+<div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border: none;">
+    <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 8px;">Selamat Datang di Portal Analitis GA-SVM</h2>
+    <p style="opacity: 0.9; max-width: 800px; font-size: 0.95rem; leading: 1.5;">
+        Aplikasi ini merupakan dashboard akademik modern untuk menganalisis kelayakan penerima bantuan sosial (Bansos) 
+        menggunakan optimasi <b>Support Vector Machine (SVM)</b> dengan seleksi fitur <b>Genetic Algorithm (GA)</b>.
+    </p>
+</div>
+
+<!-- ── Statistics Cards Grid ── -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+            <span class="stat-label">Total Penduduk</span>
+            <span class="stat-value" id="stat-total">{{ "{:,}".format(stats.total_population) }}</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">✓</div>
+        <div class="stat-info">
+            <span class="stat-label">Layak Bansos</span>
+            <span class="stat-value" id="stat-eligible">{{ "{:,}".format(stats.eligible_count) }}</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon danger">✗</div>
+        <div class="stat-info">
+            <span class="stat-label">Tidak Layak</span>
+            <span class="stat-value" id="stat-ineligible">{{ "{:,}".format(stats.ineligible_count) }}</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon warning">🎯</div>
+        <div class="stat-info">
+            <span class="stat-label">Akurasi Model</span>
+            <span class="stat-value" id="stat-accuracy">
+                {% if state.svm_trained %}
+                    {{ "%.2f"|format(stats.accuracy * 100) }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- ── Overview Research Card ── -->
+    <div class="card">
+        <h3 class="card-title">📝 Ringkasan Penelitian</h3>
+        <div style="font-size: 0.9rem; leading: 1.6; color: var(--text-main);">
+            <p style="margin-bottom: 12px;">
+                Penelitian ini mengevaluasi kinerja metode <b>Support Vector Machine (SVM)</b> dalam mengklasifikasikan penduduk miskin 
+                yang layak menerima bantuan sosial berdasarkan indikator sosial ekonomi.
+            </p>
+            <p style="margin-bottom: 12px;">
+                Untuk meningkatkan akurasi dan menyederhanakan model, <b>Algoritma Genetika (GA)</b> digunakan sebagai metode pembungkus (wrapper) 
+                seleksi fitur. GA menyeleksi subset fitur optimal yang memiliki tingkat kontribusi tinggi, mengeliminasi fitur-fitur yang tidak relevan (noise), 
+                dan mempercepat waktu komputasi pelatihan SVM.
+            </p>
+            <div style="background-color: var(--bg-color); padding: 12px; border-radius: var(--border-radius-md); border-left: 4px solid var(--secondary-color); margin-top: 16px;">
+                <b>Dataset:</b> Berisi informasi kependudukan terperinci termasuk identitas penduduk (NIK & Nama) 
+                serta parameter numerik dan kategorik penunjang.
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Research Workflow Card ── -->
+    <div class="card">
+        <h3 class="card-title">🗺️ Alur Pipeline GA-SVM</h3>
+        <div class="workflow-steps" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="background-color: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">1</span>
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600;">Memuat Dataset</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-light);">Mengunggah file CSV atau memuat dataset sampel bawaan dengan NIK & Nama penduduk.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="background-color: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">2</span>
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600;">Preprocessing Data</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-light);">Menghapus data duplikat, mengisi missing value, meng-encode variabel kategori, dan memisahkan kolom identitas.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="background-color: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">3</span>
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600;">Split Train-Test</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-light);">Membagi data latih (80%) dan data uji (20%) secara stratified untuk menjaga distribusi kelas target.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="background-color: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">4</span>
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600;">SVM Baseline & Seleksi Fitur GA</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-light);">Melatih model SVM baseline, kemudian menjalankan Algoritma Genetika untuk memilah kombinasi fitur terbaik.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="background-color: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">5</span>
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600;">Evaluasi Akhir</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-light);">Membandingkan akurasi, presisi, recall, F1-Score, dan confusion matrix sebelum vs setelah optimasi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

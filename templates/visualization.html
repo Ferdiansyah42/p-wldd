@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not state.dataset_loaded %}
+<div class="card" style="text-align: center; padding: 60px 40px;">
+    <p style="font-size: 3.5rem; margin-bottom: 16px;">📊</p>
+    <h3 style="font-weight: 600; color: var(--primary-color);">Visualisasi Data Belum Tersedia</h3>
+    <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 6px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Unggah berkas CSV Anda atau muat dataset sampel bawaan di menu Kelola Dataset terlebih dahulu untuk menampilkan grafik analitik statistik.
+    </p>
+    <a href="{{ url_for('page_dataset') }}" class="btn btn-primary" style="margin-top: 20px;">Kelola Dataset</a>
+</div>
+{% else %}
+<!-- ── Grid Charts ── -->
+<div class="grid-2" style="margin-bottom: 24px;">
+    <!-- 1. Pie Chart: Kelayakan Bansos Ratio -->
+    <div class="card">
+        <h3 class="card-title">🍰 Rasio Kelayakan Penerima Bansos</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Persentase kelayakan seluruh penduduk di dalam dataset aktif.</p>
+        <div style="width: 100%; height: 260px; position: relative;">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- 2. Bar Chart: Income Distribution -->
+    <div class="card">
+        <h3 class="card-title">💵 Distribusi Tingkat Pendapatan Penduduk</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Jumlah Kepala Keluarga berdasarkan rentang pengeluaran/pendapatan bulanan.</p>
+        <div style="width: 100%; height: 260px; position: relative;">
+            <canvas id="incomeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- 3. Grouped Bar Chart: Region-wise Poverty -->
+    <div class="card">
+        <h3 class="card-title">🗺️ Distribusi Kemiskinan Berdasarkan Wilayah</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Komparasi kuantitas penduduk Layak vs Tidak Layak di 10 daerah teratas.</p>
+        <div style="width: 100%; height: 280px; position: relative;">
+            <canvas id="regionChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- 4. Horizontal Bar Chart: Feature Importance (Correlation / MI Score) -->
+    <div class="card">
+        <h3 class="card-title">📊 Hubungan Fitur & Target (Feature Contribution)</h3>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Kontribusi/Skor Informasi Mutual (Mutual Info Classif) tiap indikator kualitatif.</p>
+        <div style="width: 100%; height: 280px; position: relative;">
+            <canvas id="importanceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Fetch data from Flask API
+    fetch("{{ url_for('api_visualization_data') }}")
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error("Gagal memuat visualisasi:", data.message);
+                return;
+            }
+            
+            // ── 1. PIE CHART ──
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            const pieLabels = Object.keys(data.target_pie);
+            const pieValues = Object.values(data.target_pie);
+            // Colors: Green for Layak (#10b981), Red/Grey for Tidak Layak
+            const pieColors = pieLabels.map(l => l.toLowerCase() === 'layak' ? '#10b981' : '#ef4444');
+            
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: pieLabels,
+                    datasets: [{
+                        data: pieValues,
+                        backgroundColor: pieColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // ── 2. INCOME CHART ──
+            const incCtx = document.getElementById('incomeChart').getContext('2d');
+            new Chart(incCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.income_data.labels,
+                    datasets: [{
+                        label: 'Kepala Keluarga',
+                        data: data.income_data.values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Kuantitas' }
+                        }
+                    }
+                }
+            });
+            
+            // ── 3. REGION CHART ──
+            const regCtx = document.getElementById('regionChart').getContext('2d');
+            const regionLabels = data.region_data.map(r => r.region);
+            const regionLayak = data.region_data.map(r => r.layak);
+            const regionTidak = data.region_data.map(r => r.tidak_layak);
+            
+            new Chart(regCtx, {
+                type: 'bar',
+                data: {
+                    labels: regionLabels,
+                    datasets: [
+                        {
+                            label: 'Layak Bansos',
+                            data: regionLayak,
+                            backgroundColor: '#10b981',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Tidak Layak',
+                            data: regionTidak,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: false },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+            
+            // ── 4. IMPORTANCE CHART ──
+            const impCtx = document.getElementById('importanceChart').getContext('2d');
+            const impLabels = data.importance_data.map(i => i.feature);
+            const impValues = data.importance_data.map(i => i.importance);
+            
+            new Chart(impCtx, {
+                type: 'bar',
+                data: {
+                    labels: impLabels,
+                    datasets: [{
+                        label: 'Nilai Mutual Information',
+                        data: impValues,
+                        backgroundColor: 'rgba(30, 58, 138, 0.7)',
+                        borderColor: '#1e3a8a',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endif %}
+{% block extra_css %}
+<style>
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+</style>
+{% endblock %}
+{% endblock %}
