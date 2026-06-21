@@ -85,6 +85,45 @@ def save_state(state):
     with open(STATE_PATH, "w") as f:
         json.dump(state, f, indent=4)
 
+def reset_application_state():
+    """Resets the state.json and deletes uploaded datasets and models."""
+    state = get_default_state()
+    save_state(state)
+    
+    # Delete uploaded dataset
+    if os.path.exists(ACTIVE_DATA_PATH):
+        try:
+            os.remove(ACTIVE_DATA_PATH)
+        except Exception:
+            pass
+            
+    # Delete saved pipeline
+    if os.path.exists(PIPELINE_PATH):
+        try:
+            os.remove(PIPELINE_PATH)
+        except Exception:
+            pass
+
+# Reset on initial startup (but not on reloads)
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+    try:
+        reset_application_state()
+    except Exception as e:
+        print("Error resetting state on startup:", e)
+
+@app.before_request
+def check_session_init():
+    # Exclude static files and API requests from resetting the state
+    if request.path.startswith('/static') or request.path.startswith('/api'):
+        return
+    
+    if not session.get('session_active'):
+        try:
+            reset_application_state()
+        except Exception as e:
+            print("Error resetting state in before_request:", e)
+        session['session_active'] = True
+
 # ──────────────────────────────────────────────
 # ROUTING - 9 PAGES OF DASHBOARD
 # ──────────────────────────────────────────────
@@ -235,6 +274,15 @@ def page_reports():
 # ──────────────────────────────────────────────
 # API ENDPOINTS
 # ──────────────────────────────────────────────
+
+@app.route('/api/reset', methods=['POST'])
+def api_reset():
+    try:
+        reset_application_state()
+        session.pop('session_active', None)  # Remove session active flag
+        return jsonify({"success": True, "message": "Aplikasi berhasil direset."})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Gagal mereset: {str(e)}"})
 
 @app.route('/api/load-sample', methods=['POST'])
 def api_load_sample():

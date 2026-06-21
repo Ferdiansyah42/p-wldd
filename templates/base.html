@@ -12,6 +12,30 @@
     <!-- Link to BPS style stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block extra_css %}{% endblock %}
+    
+    <!-- Script to reset state on new browser session (tab/window open) -->
+    <script>
+        if (!sessionStorage.getItem("active_session")) {
+            sessionStorage.setItem("active_session", "true");
+            document.write('<style id="temp-hide-body">body { display: none !important; }</style>');
+            
+            var resetTimeout = setTimeout(function() {
+                var styleEl = document.getElementById("temp-hide-body");
+                if (styleEl) styleEl.remove();
+            }, 1500);
+
+            fetch("/api/reset", {
+                method: "POST"
+            }).then(function() {
+                clearTimeout(resetTimeout);
+                window.location.reload();
+            }).catch(function() {
+                clearTimeout(resetTimeout);
+                var styleEl = document.getElementById("temp-hide-body");
+                if (styleEl) styleEl.remove();
+            });
+        }
+    </script>
 </head>
 <body>
     <div class="app-layout">

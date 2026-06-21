@@ -499,3 +499,26 @@ function initRecipientSearch() {
         });
     });
 }
+
+// ──────────────────────────────────────────────
+// 5. RESET PROGRAM FUNCTIONALITY
+// ──────────────────────────────────────────────
+window.confirmReset = function() {
+    if (confirm("Apakah Anda yakin ingin mereset seluruh data dan model pada dashboard ini kembali ke kondisi kosong?")) {
+        fetch("/api/reset", {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("✅ Dashboard berhasil direset kembali ke kondisi kosong!");
+                window.location.href = "/";
+            } else {
+                alert("❌ Gagal mereset: " + data.message);
+            }
+        })
+        .catch(err => {
+            alert("❌ Terjadi kesalahan koneksi: " + err);
+        });
+    }
+};
