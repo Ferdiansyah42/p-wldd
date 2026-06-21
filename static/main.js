@@ -121,8 +121,20 @@ function initPreprocessing() {
         btnRunPreprocess.disabled = true;
         btnRunPreprocess.innerHTML = "⚡ Memproses Data...";
 
+        const cleanVal = typeof window.cleanSelected !== 'undefined' ? window.cleanSelected : true;
+        const normVal = typeof window.normSelected !== 'undefined' ? window.normSelected : true;
+        const splitVal = typeof window.splitSelected !== 'undefined' ? window.splitSelected : true;
+
         fetch("/api/run-preprocess", {
-            method: "POST"
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                clean_data: cleanVal,
+                scale_data: normVal,
+                split_data: splitVal
+            })
         })
         .then(res => res.json())
         .then(data => {
@@ -130,20 +142,38 @@ function initPreprocessing() {
             btnRunPreprocess.innerHTML = "⚡ Jalankan Preprocessing Data";
 
             if (data.success) {
-                // Set all checklist items as checked
-                document.querySelectorAll(".checklist-item").forEach(item => {
-                    item.classList.add("checked");
-                });
-                
-                // Update badges
-                document.getElementById("badge-clean").innerHTML = "Dibersihkan";
-                document.getElementById("badge-clean").className = "badge badge-success";
-                
-                document.getElementById("badge-norm").innerHTML = "Normal";
-                document.getElementById("badge-norm").className = "badge badge-success";
-                
-                document.getElementById("badge-split").innerHTML = "Terbagi (80:20)";
-                document.getElementById("badge-split").className = "badge badge-success";
+                // Update Clean UI
+                if (cleanVal) {
+                    document.getElementById("check-clean").classList.add("checked");
+                    document.getElementById("badge-clean").innerHTML = "Dibersihkan";
+                    document.getElementById("badge-clean").className = "badge badge-success";
+                } else {
+                    document.getElementById("check-clean").classList.remove("checked");
+                    document.getElementById("badge-clean").innerHTML = "Dilewati";
+                    document.getElementById("badge-clean").className = "badge badge-danger";
+                }
+
+                // Update Norm UI
+                if (normVal) {
+                    document.getElementById("check-norm").classList.add("checked");
+                    document.getElementById("badge-norm").innerHTML = "Normal";
+                    document.getElementById("badge-norm").className = "badge badge-success";
+                } else {
+                    document.getElementById("check-norm").classList.remove("checked");
+                    document.getElementById("badge-norm").innerHTML = "Dilewati";
+                    document.getElementById("badge-norm").className = "badge badge-danger";
+                }
+
+                // Update Split UI
+                if (splitVal) {
+                    document.getElementById("check-split").classList.add("checked");
+                    document.getElementById("badge-split").innerHTML = "Terbagi (80:20)";
+                    document.getElementById("badge-split").className = "badge badge-success";
+                } else {
+                    document.getElementById("check-split").classList.remove("checked");
+                    document.getElementById("badge-split").innerHTML = "Dilewati";
+                    document.getElementById("badge-split").className = "badge badge-danger";
+                }
 
                 // Show details card
                 summaryCard.style.display = "block";

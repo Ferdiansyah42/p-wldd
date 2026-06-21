@@ -23,7 +23,7 @@ def load_data(filepath):
         raise ValueError("Dataset kosong.")
     return df
 
-def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
+def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"], clean_data=True):
     """
     Cleans duplicates, handles missing values, encodes categories, and isolates NIK/Nama.
     Returns: df_clean, X, y, identities, label_encoders, cat_cols, n_dup
@@ -34,8 +34,10 @@ def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
     df_clean.dropna(how='all', inplace=True)
     
     # 1. Hapus duplikat
-    n_dup = int(df_clean.duplicated().sum())
-    df_clean.drop_duplicates(inplace=True)
+    n_dup = 0
+    if clean_data:
+        n_dup = int(df_clean.duplicated().sum())
+        df_clean.drop_duplicates(inplace=True)
     
     # Identify target column
     if target_col is None or target_col not in df_clean.columns:
@@ -57,13 +59,14 @@ def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
     num_cols = [col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])]
     cat_cols = [col for col in X.columns if not pd.api.types.is_numeric_dtype(X[col])]
     
-    for col in num_cols:
-        if X[col].isnull().any():
-            X[col] = X[col].fillna(X[col].median())
-            
-    for col in cat_cols:
-        if X[col].isnull().any():
-            X[col] = X[col].fillna(X[col].mode()[0])
+    if clean_data:
+        for col in num_cols:
+            if X[col].isnull().any():
+                X[col] = X[col].fillna(X[col].median())
+                
+        for col in cat_cols:
+            if X[col].isnull().any():
+                X[col] = X[col].fillna(X[col].mode()[0])
             
     # Label encode target if it's non-numeric
     target_encoder = None
@@ -84,20 +87,28 @@ def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
         
     return df_clean, X, y, identities, label_encoders, cat_cols, n_dup
 
-def split_and_scale(X, y, test_size=0.2):
-    """Splits data and standardizes features. Returns X_train, X_test, y_train, y_test, scaler"""
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=42, stratify=y
-    )
-    
-    scaler = StandardScaler()
-    X_train_scaled = pd.DataFrame(
-        scaler.fit_transform(X_train), columns=X_train.columns, index=X_train.index
-    )
-    X_test_scaled = pd.DataFrame(
-        scaler.transform(X_test), columns=X_test.columns, index=X_test.index
-    )
-    
+def split_and_scale(X, y, test_size=0.2, split_data=True, scale_data=True):
+    """Splits data and/or standardizes features based on options."""
+    if split_data:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42, stratify=y
+        )
+    else:
+        X_train, X_test, y_train, y_test = X.copy(), X.copy(), y.copy(), y.copy()
+        
+    if scale_data:
+        scaler = StandardScaler()
+        X_train_scaled = pd.DataFrame(
+            scaler.fit_transform(X_train), columns=X_train.columns, index=X_train.index
+        )
+        X_test_scaled = pd.DataFrame(
+            scaler.transform(X_test), columns=X_test.columns, index=X_test.index
+        )
+    else:
+        scaler = None
+        X_train_scaled = X_train
+        X_test_scaled = X_test
+        
     return X_train_scaled, X_test_scaled, y_train, y_test, scaler
 
 # ──────────────────────────────────────────────

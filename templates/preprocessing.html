@@ -11,7 +11,7 @@
     <!-- Checklist Box -->
     <div style="border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); background-color: #fafbfc; overflow: hidden; margin-bottom: 24px;">
         <!-- Step 1 -->
-        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-clean">
+        <div class="checklist-item {% if not state.preprocessed or state.clean_data %}checked{% endif %} {% if state.dataset_loaded %}selectable{% endif %}" id="check-clean" onclick="toggleCheck('clean')">
             <div class="checklist-left">
                 <div class="checklist-icon">✓</div>
                 <div class="checklist-text">
@@ -19,11 +19,17 @@
                     <p>Menghapus baris duplikat, mendeteksi nilai kosong (missing values), dan mengisinya dengan median/modus.</p>
                 </div>
             </div>
-            <span class="badge" id="badge-clean">{% if state.preprocessed %}Dibersihkan{% else %}Menunggu{% endif %}</span>
+            <span class="badge {% if state.preprocessed and not state.clean_data %}badge-danger{% else %}badge-success{% endif %}" id="badge-clean">
+                {% if state.preprocessed %}
+                    {% if state.clean_data %}Dibersihkan{% else %}Dilewati{% endif %}
+                {% else %}
+                    Akan Dijalankan
+                {% endif %}
+            </span>
         </div>
 
         <!-- Step 2 -->
-        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-norm">
+        <div class="checklist-item {% if not state.preprocessed or state.scale_data %}checked{% endif %} {% if state.dataset_loaded %}selectable{% endif %}" id="check-norm" onclick="toggleCheck('norm')">
             <div class="checklist-left">
                 <div class="checklist-icon">✓</div>
                 <div class="checklist-text">
@@ -31,11 +37,17 @@
                     <p>Melakukan standardisasi fitur-fitur numerik agar berdistribusi normal (mean=0, std=1) guna menunjang algoritma SVM.</p>
                 </div>
             </div>
-            <span class="badge" id="badge-norm">{% if state.preprocessed %}Normal{% else %}Menunggu{% endif %}</span>
+            <span class="badge {% if state.preprocessed and not state.scale_data %}badge-danger{% else %}badge-success{% endif %}" id="badge-norm">
+                {% if state.preprocessed %}
+                    {% if state.scale_data %}Normal{% else %}Dilewati{% endif %}
+                {% else %}
+                    Akan Dijalankan
+                {% endif %}
+            </span>
         </div>
 
         <!-- Step 3 -->
-        <div class="checklist-item {% if state.preprocessed %}checked{% endif %}" id="check-split">
+        <div class="checklist-item {% if not state.preprocessed or state.split_data %}checked{% endif %} {% if state.dataset_loaded %}selectable{% endif %}" id="check-split" onclick="toggleCheck('split')">
             <div class="checklist-left">
                 <div class="checklist-icon">✓</div>
                 <div class="checklist-text">
@@ -43,7 +55,13 @@
                     <p>Membagi dataset menjadi 80% data latih dan 20% data uji dengan stratifikasi target kelas agar sebaran tetap merata.</p>
                 </div>
             </div>
-            <span class="badge" id="badge-split">{% if state.preprocessed %}Terbagi (80:20){% else %}Menunggu{% endif %}</span>
+            <span class="badge {% if state.preprocessed and not state.split_data %}badge-danger{% else %}badge-success{% endif %}" id="badge-split">
+                {% if state.preprocessed %}
+                    {% if state.split_data %}Terbagi (80:20){% else %}Dilewati{% endif %}
+                {% else %}
+                    Akan Dijalankan
+                {% endif %}
+            </span>
         </div>
     </div>
 
@@ -78,4 +96,54 @@
         </div>
     </div>
 </div>
+
+<script>
+window.cleanSelected = {% if state.preprocessed %}{% if state.clean_data %}true{% else %}false{% endif %}{% else %}true{% endif %};
+window.normSelected = {% if state.preprocessed %}{% if state.scale_data %}true{% else %}false{% endif %}{% else %}true{% endif %};
+window.splitSelected = {% if state.preprocessed %}{% if state.split_data %}true{% else %}false{% endif %}{% else %}true{% endif %};
+
+function toggleCheck(type) {
+    // If dataset not loaded, do not allow toggling
+    {% if not state.dataset_loaded %}
+    return;
+    {% endif %}
+    
+    if (type === 'clean') {
+        window.cleanSelected = !window.cleanSelected;
+        updateItemUI('clean', window.cleanSelected, 'Akan Dijalankan', 'Dilewati');
+    } else if (type === 'norm') {
+        window.normSelected = !window.normSelected;
+        updateItemUI('norm', window.normSelected, 'Akan Dijalankan', 'Dilewati');
+    } else if (type === 'split') {
+        window.splitSelected = !window.splitSelected;
+        updateItemUI('split', window.splitSelected, 'Akan Dijalankan', 'Dilewati');
+    }
+}
+
+function updateItemUI(id, isSelected, activeText, inactiveText) {
+    const item = document.getElementById('check-' + id);
+    const badge = document.getElementById('badge-' + id);
+    if (isSelected) {
+        item.classList.add('checked');
+        badge.innerHTML = activeText;
+        badge.className = 'badge badge-success';
+    } else {
+        item.classList.remove('checked');
+        badge.innerHTML = inactiveText;
+        badge.className = 'badge badge-danger';
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.checklist-item.selectable {
+    cursor: pointer;
+    transition: var(--transition);
+}
+.checklist-item.selectable:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+</style>
 {% endblock %}

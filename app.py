@@ -287,24 +287,32 @@ def api_run_preprocess():
         return jsonify({"success": False, "message": "Dataset belum diunggah."})
         
     try:
+        # Read parameters from POST request
+        req_data = request.get_json() or {}
+        clean_data = req_data.get("clean_data", True)
+        scale_data = req_data.get("scale_data", True)
+        split_data = req_data.get("split_data", True)
+        
         # Load and verify
         df = load_data(ACTIVE_DATA_PATH)
         
         # Execute preprocessing (ignores NIK, Nama)
-        # We also want to record the actual features
-        df_clean, X, y, identities, encoders, cat_cols, n_dup = preprocess_data(df)
+        df_clean, X, y, identities, encoders, cat_cols, n_dup = preprocess_data(df, clean_data=clean_data)
         
         # Update state
         state["preprocessed"] = True
-        state["n_dup"] = n_dup
+        state["n_dup"] = n_dup if clean_data else 0
         state["all_features"] = X.columns.tolist()
         state["n_features_all"] = len(X.columns)
+        state["clean_data"] = clean_data
+        state["scale_data"] = scale_data
+        state["split_data"] = split_data
         save_state(state)
         
         return jsonify({
             "success": True, 
             "message": "Preprocessing selesai secara dinamis.",
-            "n_dup": n_dup,
+            "n_dup": n_dup if clean_data else 0,
             "n_features": len(X.columns)
         })
     except Exception as e:
@@ -317,15 +325,37 @@ def api_run_preprocess():
 def background_training_worker(svm_params, ga_params):
     global is_training
     try:
+        # Load custom selections from state
+        state = load_state()
+        clean_data = state.get("clean_data", True)
+        scale_data = state.get("scale_data", True)
+        split_data = state.get("split_data", True)
+        
         # 1. Load & Preprocess
         train_queue.put({"type": "log", "message": "Memuat dataset aktif..."})
         df = load_data(ACTIVE_DATA_PATH)
         
         train_queue.put({"type": "log", "message": "Melakukan Preprocessing & Encoding..."})
-        df_clean, X, y, identities, label_encoders, cat_cols, n_dup = preprocess_data(df)
+        df_clean, X, y, identities, label_encoders, cat_cols, n_dup = preprocess_data(df, clean_data=clean_data)
         
-        train_queue.put({"type": "log", "message": "Membagi data latih & uji (Split 80:20)..."})
-        X_train, X_test, y_train, y_test, scaler = split_and_scale(X, y, test_size=0.2)
+        if clean_data:
+            train_queue.put({"type": "log", "message": f"Pembersihan data selesai (Duplikat dihapus: {n_dup})."})
+        else:
+            train_queue.put({"type": "log", "message": "Pembersihan data dilewati (sesuai pilihan user)."})
+            
+        if split_data:
+            train_queue.put({"type": "log", "message": "Membagi data latih & uji (Split 80:20)..."})
+        else:
+            train_queue.put({"type": "log", "message": "Pemisahan data dilewati, menggunakan 100% data untuk latih & uji."})
+            
+        X_train, X_test, y_train, y_test, scaler = split_and_scale(
+            X, y, test_size=0.2, split_data=split_data, scale_data=scale_data
+        )
+        
+        if scale_data:
+            train_queue.put({"type": "log", "message": "Standardisasi StandardScaler selesai."})
+        else:
+            train_queue.put({"type": "log", "message": "Standardisasi StandardScaler dilewati."})
         
         # Callback for GA progress
         def ga_callback(status):
