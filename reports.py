@@ -2,6 +2,7 @@ import io
 import json
 import os
 import pandas as pd
+from ga_svm import load_data
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from reportlab.lib.pagesizes import letter
@@ -163,7 +164,7 @@ def generate_excel_report(state, dataset_path):
     if os.path.exists(dataset_path):
         ws3 = wb.create_sheet(title="Dataset")
         ws3.views.sheetView[0].showGridLines = True
-        df = pd.read_csv(dataset_path)
+        df = load_data(dataset_path)
         # Limit preview to 200 rows for size efficiency
         df_preview = df.head(200)
         
@@ -290,7 +291,7 @@ def generate_pdf_report(state, dataset_path):
     
     num_rows = 0
     if os.path.exists(dataset_path):
-        df = pd.read_csv(dataset_path)
+        df = load_data(dataset_path)
         num_rows = len(df)
         
     ds_text = (

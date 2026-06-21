@@ -103,7 +103,7 @@ def index_dashboard():
     
     if state.get("dataset_loaded") and os.path.exists(ACTIVE_DATA_PATH):
         try:
-            df = pd.read_csv(ACTIVE_DATA_PATH)
+            df = load_data(ACTIVE_DATA_PATH)
             stats["total_population"] = len(df)
             
             # Identify target column (default to last column if status kelayakan not explicitly in state)
@@ -130,7 +130,7 @@ def page_dataset():
     
     if state.get("dataset_loaded") and os.path.exists(ACTIVE_DATA_PATH):
         try:
-            df = pd.read_csv(ACTIVE_DATA_PATH)
+            df = load_data(ACTIVE_DATA_PATH)
             headers = df.columns.tolist()
             # Convert first 50 rows to list of lists for clean rendering
             data_preview = df.head(50).values.tolist()
@@ -420,7 +420,7 @@ def api_search():
         return jsonify({"success": False, "message": "Dataset belum diunggah."})
         
     try:
-        df = pd.read_csv(ACTIVE_DATA_PATH)
+        df = load_data(ACTIVE_DATA_PATH)
         
         # Search by NIK (exact or starts with) or Nama (substring, case insensitive)
         query_lower = query.lower()
@@ -539,7 +539,7 @@ def api_visualization_data():
         return jsonify({"success": False, "message": "Dataset belum diunggah."})
         
     try:
-        df = pd.read_csv(ACTIVE_DATA_PATH)
+        df = load_data(ACTIVE_DATA_PATH)
         target_col = df.columns[-1]
         
         # 1. Poverty count per region (Kab/Kota or Provinsi)
