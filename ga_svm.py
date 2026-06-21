@@ -30,6 +30,9 @@ def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
     """
     df_clean = df.copy()
     
+    # Drop completely empty rows
+    df_clean.dropna(how='all', inplace=True)
+    
     # 1. Hapus duplikat
     n_dup = int(df_clean.duplicated().sum())
     df_clean.drop_duplicates(inplace=True)
@@ -38,6 +41,9 @@ def preprocess_data(df, target_col=None, ignore_cols=["NIK", "Nama"]):
     if target_col is None or target_col not in df_clean.columns:
         target_col = df_clean.columns[-1]
         
+    # Drop rows where target is NaN
+    df_clean.dropna(subset=[target_col], inplace=True)
+    
     y = df_clean[target_col].copy()
     
     # Isolate identities (NIK, Nama)
