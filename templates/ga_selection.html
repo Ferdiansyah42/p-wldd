@@ -9,43 +9,55 @@
             Atur parameter pencarian heuristik GA untuk menyeleksi fitur-fitur kualitatif terbaik dari dataset.
         </p>
         
+        {% if recommended_params.is_custom %}
+        <div style="background-color: #EBF5FF; border: 1px solid #BFDBFE; border-radius: var(--border-radius-md); padding: 12px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;">
+            <span style="font-size: 1.25rem; line-height: 1;">💡</span>
+            <div>
+                <p style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #1E40AF;">Rekomendasi Otomatis Aktif</p>
+                <p style="margin: 4px 0 0 0; font-size: 0.775rem; color: #1E3A8A; line-height: 1.4;">
+                    Parameter di bawah telah disesuaikan secara otomatis berdasarkan ukuran dataset Anda (<strong>{{ recommended_params.num_rows }} baris</strong> dan <strong>{{ recommended_params.num_features }} fitur</strong>) agar proses pelatihan optimal dan berjalan cepat.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
         <form id="ga-form" onsubmit="return false;">
             <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div class="form-group">
                     <label for="ga-pop-size">Ukuran Populasi</label>
-                    <input type="number" id="ga-pop-size" class="form-control" value="30" min="10" max="200">
+                    <input type="number" id="ga-pop-size" class="form-control" value="{{ recommended_params.pop_size }}" min="10" max="200">
                 </div>
                 <div class="form-group">
                     <label for="ga-generations">Jumlah Generasi</label>
-                    <input type="number" id="ga-generations" class="form-control" value="50" min="5" max="200">
+                    <input type="number" id="ga-generations" class="form-control" value="{{ recommended_params.generations }}" min="5" max="200">
                 </div>
             </div>
             
             <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div class="form-group">
                     <label for="ga-crossover">Crossover Rate</label>
-                    <input type="number" id="ga-crossover" class="form-control" value="0.8" step="0.05" min="0.5" max="1.0">
+                    <input type="number" id="ga-crossover" class="form-control" value="{{ recommended_params.crossover_rate }}" step="0.05" min="0.5" max="1.0">
                 </div>
                 <div class="form-group">
                     <label for="ga-mutation">Mutation Rate</label>
-                    <input type="number" id="ga-mutation" class="form-control" value="0.1" step="0.01" min="0.01" max="0.5">
+                    <input type="number" id="ga-mutation" class="form-control" value="{{ recommended_params.mutation_rate }}" step="0.01" min="0.01" max="0.5">
                 </div>
             </div>
             
             <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div class="form-group">
                     <label for="ga-tournament">Tournament Size (k)</label>
-                    <input type="number" id="ga-tournament" class="form-control" value="3" min="2" max="10">
+                    <input type="number" id="ga-tournament" class="form-control" value="{{ recommended_params.tournament_k }}" min="2" max="10">
                 </div>
                 <div class="form-group">
                     <label for="ga-cv-folds">CV Folds (Fitness)</label>
-                    <input type="number" id="ga-cv-folds" class="form-control" value="3" min="2" max="10">
+                    <input type="number" id="ga-cv-folds" class="form-control" value="{{ recommended_params.cv_folds }}" min="2" max="10">
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="ga-early-stop">Early Stop Patience</label>
-                <input type="number" id="ga-early-stop" class="form-control" value="10" min="3" max="50">
+                <input type="number" id="ga-early-stop" class="form-control" value="{{ recommended_params.early_stop }}" min="3" max="50">
             </div>
             
             <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 20px;">

@@ -158,7 +158,54 @@ def page_ga_selection():
             "selected": f in selected_set
         })
         
-    return render_template("ga_selection.html", state=state, features_status=features_status)
+    # Dynamic parameter calculation based on dataset rows and features
+    recommended_params = {
+        "pop_size": 30,
+        "generations": 50,
+        "crossover_rate": 0.8,
+        "mutation_rate": 0.1,
+        "tournament_k": 3,
+        "cv_folds": 3,
+        "early_stop": 10,
+        "num_rows": 0,
+        "num_features": 0,
+        "is_custom": False
+    }
+    
+    if os.path.exists(ACTIVE_DATA_PATH):
+        try:
+            df = load_data(ACTIVE_DATA_PATH)
+            num_rows = len(df)
+            target_col = df.columns[-1]
+            ignore_cols = ["NIK", "Nama", target_col]
+            features_list = [c for c in df.columns if c not in ignore_cols]
+            num_features = len(features_list)
+            
+            if num_features > 0:
+                recommended_params["num_rows"] = num_rows
+                recommended_params["num_features"] = num_features
+                recommended_params["is_custom"] = True
+                
+                # Heuristic calculations for speed and representation
+                # Pop size: 2 * features, bounded [10, 30] for safety/speed
+                recommended_params["pop_size"] = max(10, min(30, int(num_features * 2)))
+                # Generations: 1.5 * features, bounded [5, 20]
+                recommended_params["generations"] = max(5, min(20, int(num_features * 1.5)))
+                
+                # Folds: 2 for large, 5 for small
+                if num_rows < 150:
+                    recommended_params["cv_folds"] = 5
+                elif num_rows > 800:
+                    recommended_params["cv_folds"] = 2
+                else:
+                    recommended_params["cv_folds"] = 3
+                    
+                recommended_params["tournament_k"] = max(2, min(4, recommended_params["pop_size"] // 5))
+                recommended_params["early_stop"] = max(3, recommended_params["generations"] // 3)
+        except Exception as e:
+            print("Error calculating recommended parameters:", e)
+            
+    return render_template("ga_selection.html", state=state, features_status=features_status, recommended_params=recommended_params)
 
 @app.route('/svm-training')
 def page_svm_training():
