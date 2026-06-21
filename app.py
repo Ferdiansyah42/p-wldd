@@ -627,8 +627,12 @@ def api_visualization_data():
         region_data = []
         for reg in top_regions:
             reg_df = df[df[region_col] == reg]
-            # Count Layak / Tidak Layak
-            layak = int((reg_df[target_col].astype(str).str.lower().str.contains("layak") & ~reg_df[target_col].astype(str).str.lower().str.contains("tidak")).sum())
+            # Count Layak (1, 1.0, layak, ya, yes) / Tidak Layak
+            is_positive = (
+                reg_df[target_col].astype(str).str.lower().str.strip().isin(["1", "1.0", "layak", "ya", "yes"]) |
+                (reg_df[target_col].astype(str).str.lower().str.contains("layak") & ~reg_df[target_col].astype(str).str.lower().str.contains("tidak"))
+            )
+            layak = int(is_positive.sum())
             tidak_layak = len(reg_df) - layak
             region_data.append({
                 "region": reg,

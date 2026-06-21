@@ -163,7 +163,30 @@ document.addEventListener("DOMContentLoaded", function() {
             
             // ── 4. IMPORTANCE CHART ──
             const impCtx = document.getElementById('importanceChart').getContext('2d');
-            const impLabels = data.importance_data.map(i => i.feature);
+            
+            // Helper to wrap long labels into multiple lines
+            function wrapLabel(label, maxLength = 25) {
+                if (!label) return '';
+                if (label.length <= maxLength) return label;
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                words.forEach(word => {
+                    if ((currentLine + ' ' + word).trim().length <= maxLength) {
+                        currentLine = (currentLine + ' ' + word).trim();
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                return lines;
+            }
+            
+            const impLabels = data.importance_data.map(i => wrapLabel(i.feature, 25));
             const impValues = data.importance_data.map(i => i.importance);
             
             new Chart(impCtx, {
@@ -187,7 +210,18 @@ document.addEventListener("DOMContentLoaded", function() {
                         legend: { display: false }
                     },
                     scales: {
-                        x: { beginAtZero: true }
+                        x: { beginAtZero: true },
+                        y: {
+                            ticks: {
+                                font: { size: 9 },
+                                autoSkip: false
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10
+                        }
                     }
                 }
             });
