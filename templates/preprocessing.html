@@ -118,6 +118,8 @@ function toggleCheck(type) {
         window.splitSelected = !window.splitSelected;
         updateItemUI('split', window.splitSelected, 'Akan Dijalankan', 'Dilewati');
     }
+    
+    updateButtonState();
 }
 
 function updateItemUI(id, isSelected, activeText, inactiveText) {
@@ -133,6 +135,36 @@ function updateItemUI(id, isSelected, activeText, inactiveText) {
         badge.className = 'badge badge-danger';
     }
 }
+
+function updateButtonState() {
+    const btn = document.getElementById('btn-run-preprocess');
+    if (!btn) return;
+    
+    // Dataset must be loaded to enable
+    const datasetLoaded = {% if state.dataset_loaded %}true{% else %}false{% endif %};
+    if (!datasetLoaded) {
+        btn.disabled = true;
+        return;
+    }
+    
+    const atLeastOne = window.cleanSelected || window.normSelected || window.splitSelected;
+    btn.disabled = !atLeastOne;
+    
+    if (!atLeastOne) {
+        btn.title = "Pilih minimal satu langkah preprocessing!";
+        btn.style.opacity = "0.6";
+        btn.style.cursor = "not-allowed";
+    } else {
+        btn.title = "";
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+    }
+}
+
+// Initial state check
+document.addEventListener("DOMContentLoaded", function() {
+    updateButtonState();
+});
 </script>
 {% endblock %}
 
