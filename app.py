@@ -607,15 +607,26 @@ def api_visualization_data():
             })
             
         # 2. Income Distribution histogram (bins)
-        # Assume income is in IDR
-        inc_col = "Pendapatan" if "Pendapatan" in df.columns else [c for c in df.columns if "pendapatan" in c.lower() or "income" in c.lower()]
+        # Assume income or expenditure is in IDR
+        inc_col = "Pendapatan" if "Pendapatan" in df.columns else [
+            c for c in df.columns 
+            if "pendapatan" in c.lower() or "income" in c.lower() or "pengeluaran" in c.lower() or "expenditure" in c.lower()
+        ]
         income_bins = []
         income_labels = ["< 1Jt", "1Jt - 2Jt", "2Jt - 3Jt", "3Jt - 4Jt", "4Jt - 5Jt", "5Jt+"]
         
         if inc_col:
             inc_col = inc_col[0] if isinstance(inc_col, list) else inc_col
-            incomes = df[inc_col].dropna().astype(float)
+            incomes = df[inc_col].dropna().astype(float).copy()
             
+            # Check if values are in thousands (Ribu Rupiah)
+            if "ribu" in inc_col.lower() or incomes.max() < 150000:
+                incomes = incomes * 1000
+                
+            # Check if values are annual
+            if "tahun" in inc_col.lower() or "annual" in inc_col.lower() or "year" in inc_col.lower():
+                incomes = incomes / 12
+                
             bin_counts = [
                 int((incomes < 1000000).sum()),
                 int(((incomes >= 1000000) & (incomes < 2000000)).sum()),

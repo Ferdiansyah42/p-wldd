@@ -69,8 +69,10 @@ document.addEventListener("DOMContentLoaded", function() {
             const pieCtx = document.getElementById('pieChart').getContext('2d');
             const pieLabels = Object.keys(data.target_pie);
             const pieValues = Object.values(data.target_pie);
-            // Colors: Green for Layak (#10b981), Red/Grey for Tidak Layak
-            const pieColors = pieLabels.map(l => l.toLowerCase() === 'layak' ? '#10b981' : '#ef4444');
+            const pieColors = pieLabels.map(l => {
+                const val = l.toLowerCase();
+                return (val === 'layak' || val === '1' || val === '1.0' || val === 'ya' || val === 'yes') ? '#10b981' : '#ef4444';
+            });
             
             new Chart(pieCtx, {
                 type: 'doughnut',
