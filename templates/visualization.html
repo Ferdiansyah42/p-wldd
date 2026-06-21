@@ -37,7 +37,7 @@
     <div class="card">
         <h3 class="card-title">🗺️ Distribusi Kemiskinan Berdasarkan Wilayah</h3>
         <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Komparasi kuantitas penduduk Layak vs Tidak Layak di 10 daerah teratas.</p>
-        <div style="width: 100%; height: 280px; position: relative;">
+        <div style="width: 100%; height: 450px; position: relative;">
             <canvas id="regionChart"></canvas>
         </div>
     </div>
@@ -46,7 +46,7 @@
     <div class="card">
         <h3 class="card-title">📊 Hubungan Fitur & Target (Feature Contribution)</h3>
         <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px;">Kontribusi/Skor Informasi Mutual (Mutual Info Classif) tiap indikator kualitatif.</p>
-        <div style="width: 100%; height: 280px; position: relative;">
+        <div style="width: 100%; height: 450px; position: relative;">
             <canvas id="importanceChart"></canvas>
         </div>
     </div>
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const impCtx = document.getElementById('importanceChart').getContext('2d');
             
             // Helper to wrap long labels into multiple lines
-            function wrapLabel(label, maxLength = 25) {
+            function wrapLabel(label, maxLength = 32) {
                 if (!label) return '';
                 if (label.length <= maxLength) return label;
                 const words = label.split(' ');
@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 return lines;
             }
             
-            const impLabels = data.importance_data.map(i => wrapLabel(i.feature, 25));
+            const impLabels = data.importance_data.map(i => wrapLabel(i.feature, 32));
             const impValues = data.importance_data.map(i => i.importance);
             
             new Chart(impCtx, {
